@@ -20,6 +20,7 @@ internal data class MainScreenState(
     val currentIndex: Long = 0,
     val currentBitmap: ImageBitmap? = null,
     val previousBitmap: ImageBitmap? = null,
+    val bitmapForCopy: ImageBitmap? = null,
     val currentPlayingBitmap: ImageBitmap? = null,
     val speed: Int = 1,
     val isGenerating: Boolean = false,
@@ -66,21 +67,8 @@ internal data class MainScreenState(
     val isAddFrameEnabled: Boolean
         get() = currentScreen == CurrentScreen.Edit && currentIndex <= Int.MAX_VALUE
 
-    fun getNumberOfFramesForAdding(): List<Int> {
-        val itemSize = (Int.MAX_VALUE - currentIndex.toInt())
-
-        val items = mutableListOf<Int>()
-
-        var cur = 1L
-
-        while (cur < itemSize) {
-            items.add(cur.toInt())
-            cur *= 2
-        }
-        items.add(itemSize)
-
-        return items
-    }
+    val isCopyFrameEnabled: Boolean
+        get() = isAddFrameEnabled && currentIndex > 0
 }
 
 enum class InstrumentState {

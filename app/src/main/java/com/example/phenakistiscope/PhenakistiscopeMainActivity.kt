@@ -49,7 +49,8 @@ internal class PhenakistiscopeMainActivity : ComponentActivity() {
                         )
                     },
                     onGenerateClicked = { viewModel.onGenerateClicked() },
-                    closeGeneratePanel = { viewModel.closeGeneratePanel() }
+                    closeGeneratePanel = { viewModel.closeGeneratePanel() },
+                    onCopyFrameClicked = { viewModel.onCopyFrameClicked() }
                 )
             }
         }

@@ -38,6 +38,7 @@ internal fun TopBar(
     removedPathList: SnapshotStateList<PathData>,
     mainScreenState: MainScreenState,
     onAddFrameClicked: (Frame) -> Unit,
+    onCopyFrameClicked: () -> Unit,
     onPauseClicked: () -> Unit,
     onPlayClicked: () -> Unit,
     onRemoveFrameClicked: () -> Unit,
@@ -101,7 +102,8 @@ internal fun TopBar(
             Icon(
                 modifier = Modifier
                     .size(26.dp)
-                    .padding(all = 1.dp).clip(CircleShape)
+                    .padding(all = 1.dp)
+                    .clip(CircleShape)
                     .clickable { onPlayClicked() },
                 imageVector = ImageVector.vectorResource(id = R.drawable.play),
                 contentDescription = "play",
@@ -185,6 +187,24 @@ internal fun TopBar(
                         R.color.disabled_icon_color
                     }
                 ),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        if (mainScreenState.isCopyFrameEnabled) {
+                            onCopyFrameClicked()
+                        }
+                    },
+                text = "C",
+                color = colorResource(
+                    id = if (mainScreenState.isCopyFrameEnabled) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                )
             )
         }
 

@@ -51,6 +51,7 @@ internal fun MainScreenContent(
     onGenerateClicked: () -> Unit = {},
     onSizeChanged: (Int, Int) -> Unit = { _, _ -> },
     closeGeneratePanel: () -> Unit = {},
+    onCopyFrameClicked: () -> Unit = {},
 ) {
     val pathList = remember {
         mutableStateListOf<PathData>()
@@ -81,6 +82,7 @@ internal fun MainScreenContent(
             onRemoveFrameClicked = onRemoveFrameClicked,
             onGenerateClicked = onGenerateClicked,
             openSpeedPanel = { isSpeedPanelOpened = !isSpeedPanelOpened },
+            onCopyFrameClicked = onCopyFrameClicked,
         )
         Box(
             modifier = Modifier

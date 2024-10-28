@@ -173,6 +173,16 @@ internal class PhenakistiscopeMainViewModel(application: Application) : AndroidV
         }
     }
 
+    fun onCopyFrameClicked() {
+        if (_currentScreenState.value.isCopyFrameEnabled) {
+            loadBitmap(imageName = currentScreenState.value.currentIndex - 1, isForPrevious = null, isForCopy = true)
+            onAddFrameClicked(Frame(
+                pathList = emptyList(),
+                bitmap = _currentScreenState.value.bitmapForCopy
+            ))
+        }
+    }
+
     fun generateFrames(numberOfFrames: Int) {
         _currentScreenState.update { it.copy(isGenerating = true) }
         viewModelScope.launch(Dispatchers.Default) {
@@ -221,11 +231,15 @@ internal class PhenakistiscopeMainViewModel(application: Application) : AndroidV
         }
     }
 
-    private fun bitmapLoaded(bitmap: Bitmap?, isForPrevious: Boolean?) {
+    private fun bitmapLoaded(bitmap: Bitmap?, isForPrevious: Boolean?, isForCopy: Boolean?) {
         if (bitmap != null) {
             var currentPlayingBitmap = _currentScreenState.value.currentPlayingBitmap
             _currentScreenState.update {
-                if (isForPrevious == null) {
+                if (isForCopy == true) {
+                    it.copy(
+                        bitmapForCopy = bitmap.asImageBitmap(),
+                    )
+                } else if (isForPrevious == null) {
                     it.copy(
                         currentPlayingBitmap = bitmap.asImageBitmap(),
                     )
@@ -313,13 +327,13 @@ internal class PhenakistiscopeMainViewModel(application: Application) : AndroidV
         return String.format("%s/%s", directory, "${imageName}.png")
     }
 
-    private fun loadBitmap(imageName: Long, isForPrevious: Boolean? = null) {
+    private fun loadBitmap(imageName: Long, isForPrevious: Boolean? = null, isForCopy: Boolean? = null) {
         val bitmap = try {
             decodeFile(getFullPath(imageName))
         } catch (e: Exception) {
             null
         }
-        bitmapLoaded(bitmap, isForPrevious)
+        bitmapLoaded(bitmap, isForPrevious, isForCopy)
     }
 
     private fun deleteBitmap(imageName: Long): Boolean {
