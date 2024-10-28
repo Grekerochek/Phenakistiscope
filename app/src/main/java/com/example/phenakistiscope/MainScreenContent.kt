@@ -386,7 +386,7 @@ private fun TopBar(
                     }
                 }
                 .padding(3.dp),
-            imageVector = ImageVector.vectorResource(id = R.drawable.ge),
+            imageVector = ImageVector.vectorResource(id = R.drawable.generate),
             contentDescription = "generate frame",
             tint = colorResource(
                 id = if (mainScreenState.isAddFrameEnabled) {
