@@ -31,10 +31,11 @@ internal class PhenakistiscopeMainActivity : ComponentActivity() {
 
                 MainScreenContent(
                     mainScreenState = mainScreenState,
-                    onAddFileClicked = { pathList -> viewModel.onAddFileClicked(pathList) },
+                    onAddFrameClicked = { frame -> viewModel.onAddFrameClicked(frame) },
                     onPlayClicked = { viewModel.onPlayClicked() },
                     onPauseClicked = { viewModel.onPauseClicked() },
-                    upCurrentIndex = { viewModel.upCurrentIndex() }
+                    onRemoveFrameClicked = { viewModel.onRemoveFrameClicked() },
+                    frameEdited = { viewModel.frameEdited() },
                 )
             }
         }

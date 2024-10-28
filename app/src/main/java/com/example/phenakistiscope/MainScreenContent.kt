@@ -36,14 +36,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import com.example.phenakistiscope.InstrumentState.*
 
 @Composable
 internal fun MainScreenContent(
     mainScreenState: MainScreenState,
-    onAddFileClicked: (List<PathData>) -> Unit = {},
+    onAddFrameClicked: (Frame) -> Unit = {},
     onPlayClicked: () -> Unit = {},
     onPauseClicked: () -> Unit = {},
-    upCurrentIndex: () -> Unit = {},
+    onRemoveFrameClicked: () -> Unit = {},
+    frameEdited: () -> Unit = {},
 ) {
     val drawScreenState = remember { mutableStateOf(DrawScreenState()) }
 
@@ -53,6 +55,18 @@ internal fun MainScreenContent(
 
     val removedPathList = remember {
         mutableStateListOf<PathData>()
+    }
+
+    val currentEditFrame = mainScreenState.currentEditFrame
+
+    if (currentEditFrame != null) {
+        pathList.clear()
+        removedPathList.clear()
+
+        pathList.addAll(currentEditFrame.pathList)
+        removedPathList.addAll(currentEditFrame.removedPathList)
+
+        frameEdited()
     }
 
     Column(
@@ -107,12 +121,18 @@ internal fun MainScreenContent(
                 modifier = Modifier
                     .clip(CircleShape)
                     .clickable {
-                        onAddFileClicked(pathList.toList())
+                        onAddFrameClicked(Frame(pathList.toList(), removedPathList.toList()))
                         pathList.clear()
                     },
-                imageVector = ImageVector.vectorResource(id = R.drawable.add_file),
-                contentDescription = "new file",
-                tint = colorResource(id = R.color.enabled_icon_color),
+                imageVector = ImageVector.vectorResource(id = R.drawable.add_frame),
+                contentDescription = "new frame",
+                tint = colorResource(
+                    id = if (mainScreenState.isAddFrameEnabled) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                ),
             )
             Icon(
                 modifier = Modifier
@@ -120,7 +140,13 @@ internal fun MainScreenContent(
                     .clickable { onPlayClicked() },
                 imageVector = ImageVector.vectorResource(id = R.drawable.play),
                 contentDescription = "play",
-                tint = colorResource(id = R.color.enabled_icon_color),
+                tint = colorResource(
+                    id = when (mainScreenState.playState) {
+                        SELECTED -> R.color.selected_icon_color
+                        ENABLED -> R.color.enabled_icon_color
+                        DISABLED -> R.color.disabled_icon_color
+                    }
+                ),
             )
             Icon(
                 modifier = Modifier
@@ -128,7 +154,27 @@ internal fun MainScreenContent(
                     .clickable { onPauseClicked() },
                 imageVector = ImageVector.vectorResource(id = R.drawable.pause),
                 contentDescription = "pause",
-                tint = colorResource(id = R.color.enabled_icon_color),
+                tint = colorResource(
+                    id = if (mainScreenState.isPauseEnabled) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                )
+            )
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onRemoveFrameClicked() },
+                imageVector = ImageVector.vectorResource(id = R.drawable.bin),
+                contentDescription = "remove frame",
+                tint = colorResource(
+                    id = if (mainScreenState.isBinEnabled) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                ),
             )
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Black),
@@ -178,26 +224,32 @@ internal fun MainScreenContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .background(
+                    color = colorResource(id = R.color.canvas_color),
+                    shape = RoundedCornerShape(size = 20.dp)
+                )
         ) {
-            if (mainScreenState.currentScreen == CurrentScreen.Edit) {
-                val isItFirstFile = mainScreenState.pathLists.isEmpty()
-                if (!isItFirstFile) {
-                    PreviousFile(
-                        modifier = Modifier.fillMaxSize(),
-                        pathList = mainScreenState.pathLists.last()
+            when (mainScreenState.currentScreen) {
+                CurrentScreen.Edit -> {
+                    val previousListPath = mainScreenState.getPreviousPathList()
+                    if (previousListPath != null) {
+                        PreviousFrame(
+                            modifier = Modifier.clipToBounds(),
+                            pathList = previousListPath,
+                        )
+                    }
+                    DrawCanvas(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        pathList = pathList,
+                        removedPathList = removedPathList,
+                        drawScreenState = drawScreenState,
                     )
                 }
-                DrawCanvas(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    pathList = pathList,
-                    removedPathList = removedPathList,
-                    drawScreenState = drawScreenState,
-                    alpha = if (isItFirstFile) 1f else 0.1f
-                )
-            } else {
-                PlayScreenContent(mainScreenState = mainScreenState, upCurrentIndex = upCurrentIndex)
+
+                CurrentScreen.Play -> PlayScreenContent(mainScreenState = mainScreenState)
             }
+
         }
         Row(
             modifier = Modifier
@@ -217,14 +269,13 @@ private fun DrawCanvas(
     pathList: SnapshotStateList<PathData>,
     removedPathList: SnapshotStateList<PathData>,
     drawScreenState: MutableState<DrawScreenState>,
-    alpha: Float,
 ) {
     var tempPath = Path()
 
     Box(
         modifier = modifier
             .background(
-                color = colorResource(id = R.color.canvas_color).copy(alpha = alpha),
+                color = colorResource(id = R.color.canvas_color).copy(alpha = 0.1f),
                 shape = RoundedCornerShape(size = 20.dp)
             )
             .pointerInput(Unit) {
@@ -279,7 +330,7 @@ private fun DrawCanvas(
 }
 
 @Composable
-private fun PreviousFile(modifier: Modifier = Modifier, pathList: List<PathData>) {
+private fun PreviousFrame(modifier: Modifier = Modifier, pathList: List<PathData>) {
     Box(
         modifier = modifier.background(
             color = colorResource(id = R.color.canvas_color),
@@ -302,8 +353,10 @@ private fun PreviousFile(modifier: Modifier = Modifier, pathList: List<PathData>
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clipToBounds()
-                .background(color = Color.White.copy(alpha = 0.5f))
+                .background(
+                    shape = RoundedCornerShape(size = 20.dp),
+                    color = Color.White.copy(alpha = 0.7f)
+                )
         )
     }
 }
