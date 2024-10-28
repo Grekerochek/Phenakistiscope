@@ -1,6 +1,7 @@
 package com.example.phenakistiscope
 
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawStyle
@@ -9,7 +10,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 @Stable
 internal data class MainScreenState(
     val currentColor: Color = Color.Black,
-    val currentDrawStyle: DrawStyle = Stroke(1f),
+    val previousColor: Color = Color.Black,
+    val currentDrawStyle: DrawStyle = Stroke(16f),
     val currentInstrument: Instrument = Instrument.Pencil,
     val frames: List<Frame> = emptyList(),
     val currentScreen: CurrentScreen = CurrentScreen.Edit,
@@ -29,29 +31,32 @@ internal data class MainScreenState(
 
     val isPauseEnabled get() = currentScreen == CurrentScreen.Play
 
-    val playState get() = if (currentScreen == CurrentScreen.Play) {
-        InstrumentState.SELECTED
-    } else if (frames.size < 2) {
-        InstrumentState.DISABLED
-    } else {
-        InstrumentState.ENABLED
-    }
+    val playState
+        get() = if (currentScreen == CurrentScreen.Play) {
+            InstrumentState.SELECTED
+        } else if (frames.size < 2) {
+            InstrumentState.DISABLED
+        } else {
+            InstrumentState.ENABLED
+        }
 
-    val pencilState get() = if (currentScreen == CurrentScreen.Play) {
-        InstrumentState.DISABLED
-    } else if (currentInstrument == Instrument.Pencil) {
-        InstrumentState.SELECTED
-    } else {
-        InstrumentState.ENABLED
-    }
+    val pencilState
+        get() = if (currentScreen == CurrentScreen.Play) {
+            InstrumentState.DISABLED
+        } else if (currentInstrument == Instrument.Pencil) {
+            InstrumentState.SELECTED
+        } else {
+            InstrumentState.ENABLED
+        }
 
-    val eraseState get() = if (currentScreen == CurrentScreen.Play) {
-        InstrumentState.DISABLED
-    } else if (currentInstrument == Instrument.Erase) {
-        InstrumentState.SELECTED
-    } else {
-        InstrumentState.ENABLED
-    }
+    val eraserState
+        get() = if (currentScreen == CurrentScreen.Play) {
+            InstrumentState.DISABLED
+        } else if (currentInstrument == Instrument.Eraser) {
+            InstrumentState.SELECTED
+        } else {
+            InstrumentState.ENABLED
+        }
 }
 
 enum class InstrumentState {
@@ -69,10 +74,11 @@ internal data class PathData(
     val path: Path = Path(),
     val color: Color = Color.Black,
     val drawStyle: DrawStyle = Stroke(1f),
+    val blendMode: BlendMode = BlendMode.SrcOver,
 )
 
 internal enum class Instrument {
-    Pencil, Erase
+    Pencil, Eraser
 }
 
 internal enum class CurrentScreen {

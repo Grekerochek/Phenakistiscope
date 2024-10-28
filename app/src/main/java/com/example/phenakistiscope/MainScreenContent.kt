@@ -2,6 +2,7 @@ package com.example.phenakistiscope
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,18 +22,26 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.example.phenakistiscope.InstrumentState.*
@@ -67,13 +77,15 @@ internal fun MainScreenContent(
         frameEdited()
     }
 
+    var isPalletOpened by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(color = colorResource(id = R.color.main_color))
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = dimensionResource(id = R.dimen.main_dimen))
     ) {
-        Spacer(modifier = Modifier.padding(top = 16.dp))
+        Spacer(modifier = Modifier.padding(top = dimensionResource(id = R.dimen.main_dimen)))
         TopBar(
             pathList = pathList,
             removedPathList = removedPathList,
@@ -88,19 +100,16 @@ internal fun MainScreenContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .clip(RoundedCornerShape(size = 20.dp))
                 .background(
-                    color = colorResource(id = R.color.canvas_color),
-                    shape = RoundedCornerShape(size = 20.dp)
+                    color = Color.White
                 )
         ) {
             when (mainScreenState.currentScreen) {
                 CurrentScreen.Edit -> {
                     val previousListPath = mainScreenState.getPreviousPathList()
                     if (previousListPath != null) {
-                        PreviousFrame(
-                            modifier = Modifier.clipToBounds(),
-                            pathList = previousListPath,
-                        )
+                        PreviousFrame(pathList = previousListPath)
                     }
                     DrawCanvas(
                         modifier = Modifier
@@ -114,9 +123,39 @@ internal fun MainScreenContent(
                 CurrentScreen.Play -> PlayScreenContent(mainScreenState = mainScreenState)
             }
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(size = 20.dp))
+                    .paint(
+                        painterResource(id = R.drawable.texture),
+                        contentScale = ContentScale.FillBounds,
+                        alpha = 0.1f, // used for better design
+                    )
+            )
+
+            if (isPalletOpened) {
+                Pallet(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(
+                            bottom = dimensionResource(
+                                id = R.dimen.main_dimen
+                            )
+                        ),
+                    onColorSelected = { color ->
+                        changeColor(color)
+                        isPalletOpened = false
+                    }
+                )
+            }
         }
 
-        BottomBar(mainScreenState = mainScreenState, onInstrumentClicked = onInstrumentClicked)
+        BottomBar(
+            mainScreenState = mainScreenState,
+            onInstrumentClicked = onInstrumentClicked,
+            onPalletOpened = { isPalletOpened = true },
+        )
     }
 }
 
@@ -136,7 +175,8 @@ private fun TopBar(
             .fillMaxWidth()
             .height(100.dp)
             .background(color = colorResource(id = R.color.main_color)),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
         val backButtonIsEnabled =
             mainScreenState.currentScreen == CurrentScreen.Edit && pathList.isNotEmpty()
@@ -176,23 +216,8 @@ private fun TopBar(
                 colorResource(id = R.color.disabled_icon_color)
             },
         )
-        Icon(
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable {
-                    onAddFrameClicked(Frame(pathList.toList(), removedPathList.toList()))
-                    pathList.clear()
-                },
-            imageVector = ImageVector.vectorResource(id = R.drawable.add_frame),
-            contentDescription = "new frame",
-            tint = colorResource(
-                id = if (mainScreenState.isAddFrameEnabled) {
-                    R.color.enabled_icon_color
-                } else {
-                    R.color.disabled_icon_color
-                }
-            ),
-        )
+        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+
         Icon(
             modifier = Modifier
                 .clip(CircleShape)
@@ -221,6 +246,25 @@ private fun TopBar(
                 }
             )
         )
+        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable {
+                    onAddFrameClicked(Frame(pathList.toList(), removedPathList.toList()))
+                    pathList.clear()
+                },
+            imageVector = ImageVector.vectorResource(id = R.drawable.add_frame),
+            contentDescription = "new frame",
+            tint = colorResource(
+                id = if (mainScreenState.isAddFrameEnabled) {
+                    R.color.enabled_icon_color
+                } else {
+                    R.color.disabled_icon_color
+                }
+            ),
+        )
         Icon(
             modifier = Modifier
                 .clip(CircleShape)
@@ -235,39 +279,6 @@ private fun TopBar(
                 }
             ),
         )
-        Button(
-            colors = ButtonDefaults.buttonColors(Color.Black),
-            onClick = {
-                changeColor(Color.Black)
-            },
-            modifier = Modifier
-                .padding(3.dp)
-                .width(40.dp)
-        ) {
-            // Black button
-        }
-        Button(
-            colors = ButtonDefaults.buttonColors(Color.Red),
-            onClick = {
-                changeColor(Color.Red)
-            },
-            modifier = Modifier
-                .padding(3.dp)
-                .width(40.dp)
-        ) {
-            // Black button
-        }
-        Button(
-            colors = ButtonDefaults.buttonColors(Color.Blue),
-            onClick = {
-                changeColor(Color.Blue)
-            },
-            modifier = Modifier
-                .padding(3.dp)
-                .width(40.dp)
-        ) {
-            // Blue button
-        }
     }
 }
 
@@ -275,6 +286,7 @@ private fun TopBar(
 private fun BottomBar(
     mainScreenState: MainScreenState,
     onInstrumentClicked: (Instrument) -> Unit,
+    onPalletOpened: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -298,20 +310,39 @@ private fun BottomBar(
                 }
             ),
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
         Icon(
             modifier = Modifier
                 .clip(CircleShape)
-                .clickable { onInstrumentClicked(Instrument.Erase) },
+                .clickable { onInstrumentClicked(Instrument.Eraser) },
             imageVector = ImageVector.vectorResource(id = R.drawable.erase),
             contentDescription = "erase",
             tint = colorResource(
-                id = when (mainScreenState.eraseState) {
+                id = when (mainScreenState.eraserState) {
                     SELECTED -> R.color.selected_icon_color
                     ENABLED -> R.color.enabled_icon_color
                     DISABLED -> R.color.disabled_icon_color
                 }
             ),
+        )
+
+        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+
+        // select color
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .border(2.dp, colorResource(id = R.color.selected_color), CircleShape)
+                .padding(1.dp)
+                .clip(CircleShape)
+                .background(
+                    color = if (mainScreenState.currentInstrument == Instrument.Eraser) {
+                        mainScreenState.previousColor
+                    } else {
+                        mainScreenState.currentColor
+                    }
+                )
+                .clickable { onPalletOpened() }
         )
     }
 }
@@ -383,13 +414,8 @@ private fun DrawCanvas(
 }
 
 @Composable
-private fun PreviousFrame(modifier: Modifier = Modifier, pathList: List<PathData>) {
-    Box(
-        modifier = modifier.background(
-            color = colorResource(id = R.color.canvas_color),
-            shape = RoundedCornerShape(size = 20.dp)
-        )
-    ) {
+private fun PreviousFrame(pathList: List<PathData>) {
+    Box {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -406,9 +432,9 @@ private fun PreviousFrame(modifier: Modifier = Modifier, pathList: List<PathData
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .clip(RoundedCornerShape(size = 20.dp))
                 .background(
-                    shape = RoundedCornerShape(size = 20.dp),
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = Color.White.copy(alpha = 0.4f) // used for better design
                 )
         )
     }

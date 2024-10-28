@@ -61,9 +61,14 @@ internal class PhenakistiscopeMainViewModel : ViewModel() {
     }
 
     fun onInstrumentClicked(instrument: Instrument) {
+        if (instrument == currentScreenState.value.currentInstrument) {
+            return
+        }
         if (currentScreenState.value.currentScreen == CurrentScreen.Edit) {
             _currentScreenState.update {
-                it.copy(currentInstrument = instrument,)
+                val color = if (instrument == Instrument.Eraser) Color.White else it.previousColor
+                val previousColor = it.currentColor
+                it.copy(currentInstrument = instrument, currentColor = color, previousColor = previousColor)
             }
         }
     }
