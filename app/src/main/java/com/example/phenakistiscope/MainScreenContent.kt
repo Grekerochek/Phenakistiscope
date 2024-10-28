@@ -38,9 +38,11 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MainScreenContent(
+internal fun MainScreenContent(
     mainScreenState: MainScreenState,
-    onAddFileClicked: (List<PathData>) -> Unit,
+    onAddFileClicked: (List<PathData>) -> Unit = {},
+    onPlayClicked: () -> Unit = {},
+    onPauseClicked: () -> Unit = {},
 ) {
     val drawScreenState = remember { mutableStateOf(DrawScreenState()) }
 
@@ -111,6 +113,22 @@ fun MainScreenContent(
                 contentDescription = "new file",
                 tint = colorResource(id = R.color.enabled_icon_color),
             )
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onPlayClicked() },
+                imageVector = ImageVector.vectorResource(id = R.drawable.play),
+                contentDescription = "play",
+                tint = colorResource(id = R.color.enabled_icon_color),
+            )
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onPauseClicked() },
+                imageVector = ImageVector.vectorResource(id = R.drawable.pause),
+                contentDescription = "pause",
+                tint = colorResource(id = R.color.enabled_icon_color),
+            )
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Black),
                 onClick = {
@@ -160,19 +178,25 @@ fun MainScreenContent(
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            val isItFirstFile = mainScreenState.pathLists.isEmpty()
-
-            if (!isItFirstFile) {
-                PreviousFile(modifier = Modifier.fillMaxSize(), pathList = mainScreenState.pathLists.last())
+            if (mainScreenState.currentScreen == CurrentScreen.Edit) {
+                val isItFirstFile = mainScreenState.pathLists.isEmpty()
+                if (!isItFirstFile) {
+                    PreviousFile(
+                        modifier = Modifier.fillMaxSize(),
+                        pathList = mainScreenState.pathLists.last()
+                    )
+                }
+                DrawCanvas(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    pathList = pathList,
+                    removedPathList = removedPathList,
+                    drawScreenState = drawScreenState,
+                    alpha = if (isItFirstFile) 1f else 0.1f
+                )
+            } else {
+                PlayScreenContent(mainScreenState = mainScreenState)
             }
-            DrawCanvas(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                pathList = pathList,
-                removedPathList = removedPathList,
-                drawScreenState = drawScreenState,
-                alpha = if (isItFirstFile) 1f else 0.1f
-            )
         }
         Row(
             modifier = Modifier

@@ -16,7 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.phenakistiscope.ui.theme.PhenakistiscopeTheme
 import kotlinx.coroutines.flow.Flow
 
-class PhenakistiscopeMainActivity : ComponentActivity() {
+internal class PhenakistiscopeMainActivity : ComponentActivity() {
 
     private val viewModel: PhenakistiscopeMainViewModel by viewModels()
 
@@ -32,6 +32,8 @@ class PhenakistiscopeMainActivity : ComponentActivity() {
                 MainScreenContent(
                     mainScreenState = mainScreenState,
                     onAddFileClicked = { pathList -> viewModel.onAddFileClicked(pathList) },
+                    onPlayClicked = { viewModel.onPlayClicked() },
+                    onPauseClicked = { viewModel.onPauseClicked() },
                 )
             }
         }
@@ -39,7 +41,7 @@ class PhenakistiscopeMainActivity : ComponentActivity() {
 }
 
 @Composable
-fun <T> Flow<T>.toStateWhenStarted(initialValue: T): State<T> {
+internal fun <T> Flow<T>.toStateWhenStarted(initialValue: T): State<T> {
     val lifecycleOwner = LocalLifecycleOwner.current
     return produceState(initialValue = initialValue, this, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -50,8 +52,8 @@ fun <T> Flow<T>.toStateWhenStarted(initialValue: T): State<T> {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+internal fun GreetingPreview() {
     PhenakistiscopeTheme {
-        MainScreenContent(MainScreenState(), {})
+        MainScreenContent(MainScreenState())
     }
 }

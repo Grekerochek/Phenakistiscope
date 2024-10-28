@@ -7,27 +7,33 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 
 @Stable
-data class MainScreenState(
+internal data class MainScreenState(
     val currentColor: Color = Color.Black,
     val currentDrawStyle: DrawStyle = Stroke(1f),
     val currentInstrument: Instrument = Instrument.Pencil,
     val pathLists: List<List<PathData>> = emptyList(),
+    val currentScreen: CurrentScreen = CurrentScreen.Edit,
+    val currentIndex: Int = 0,
 )
 
 @Stable
-data class DrawScreenState(
+internal data class DrawScreenState(
     val currentColor: Color = Color.Black,
     val currentDrawStyle: DrawStyle = Stroke(1f),
     val currentInstrument: Instrument = Instrument.Pencil,
 )
 
 @Stable
-data class PathData(
+internal data class PathData(
     val path: Path = Path(),
     val color: Color = Color.Black,
     val drawStyle: DrawStyle = Stroke(1f),
 )
 
-enum class Instrument {
+internal enum class Instrument {
     Pen, Pencil, Erase, Circle, Triangle, Square
+}
+
+internal enum class CurrentScreen {
+    Edit, Play
 }

@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
-class PhenakistiscopeMainViewModel : ViewModel() {
+internal class PhenakistiscopeMainViewModel : ViewModel() {
 
     private val _currentStateScreen: MutableStateFlow<MainScreenState> =
         MutableStateFlow(MainScreenState())
@@ -20,5 +20,13 @@ class PhenakistiscopeMainViewModel : ViewModel() {
                 pathLists = newPathList,
             )
         }
+    }
+
+    fun onPlayClicked() {
+        _currentStateScreen.update { it.copy(currentScreen = CurrentScreen.Play) }
+    }
+
+    fun onPauseClicked() {
+        _currentStateScreen.update { it.copy(currentScreen = CurrentScreen.Edit) }
     }
 }
