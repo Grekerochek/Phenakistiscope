@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 
 data class DrawScreenState(
-    val lines: List<Line> = emptyList(),
     val currentColor: Color = Color.Black,
     val currentDrawStyle: DrawStyle = Stroke(1f),
     val currentInstrument: Instrument = Instrument.Pencil,
