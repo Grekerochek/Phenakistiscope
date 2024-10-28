@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
@@ -46,6 +46,7 @@ internal fun MainScreenContent(
     onPauseClicked: () -> Unit = {},
     onRemoveFrameClicked: () -> Unit = {},
     frameEdited: () -> Unit = {},
+    onInstrumentClicked: (Instrument) -> Unit = {},
 ) {
     val drawScreenState = remember { mutableStateOf(DrawScreenState()) }
 
@@ -210,15 +211,6 @@ internal fun MainScreenContent(
             ) {
                 // Blue button
             }
-            Button(
-                colors = ButtonDefaults.buttonColors(Color.Black),
-                onClick = {
-                    pathList.clear()
-                },
-                modifier = Modifier.padding(3.dp)
-            ) {
-                Text(text = "Clear")
-            }
         }
         Box(
             modifier = Modifier
@@ -256,9 +248,38 @@ internal fun MainScreenContent(
                 .fillMaxWidth()
                 .height(100.dp)
                 .background(color = colorResource(id = R.color.main_color)),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
-
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onInstrumentClicked(Instrument.Pencil) },
+                imageVector = ImageVector.vectorResource(id = R.drawable.pencil),
+                contentDescription = "pencil",
+                tint = colorResource(
+                    id = when (mainScreenState.pencilState) {
+                        SELECTED -> R.color.selected_icon_color
+                        ENABLED -> R.color.enabled_icon_color
+                        DISABLED -> R.color.disabled_icon_color
+                    }
+                ),
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onInstrumentClicked(Instrument.Erase) },
+                imageVector = ImageVector.vectorResource(id = R.drawable.erase),
+                contentDescription = "erase",
+                tint = colorResource(
+                    id = when (mainScreenState.eraseState) {
+                        SELECTED -> R.color.selected_icon_color
+                        ENABLED -> R.color.enabled_icon_color
+                        DISABLED -> R.color.disabled_icon_color
+                    }
+                ),
+            )
         }
     }
 }

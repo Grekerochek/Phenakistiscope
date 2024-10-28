@@ -58,4 +58,12 @@ internal class PhenakistiscopeMainViewModel : ViewModel() {
             it.copy(currentScreen = CurrentScreen.Edit)
         }
     }
+
+    fun onInstrumentClicked(instrument: Instrument) {
+        if (currentScreenState.value.currentScreen == CurrentScreen.Edit) {
+            _currentScreenState.update {
+                it.copy(currentInstrument = instrument,)
+            }
+        }
+    }
 }

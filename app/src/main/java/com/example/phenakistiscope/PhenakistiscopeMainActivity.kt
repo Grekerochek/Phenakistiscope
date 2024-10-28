@@ -36,6 +36,7 @@ internal class PhenakistiscopeMainActivity : ComponentActivity() {
                     onPauseClicked = { viewModel.onPauseClicked() },
                     onRemoveFrameClicked = { viewModel.onRemoveFrameClicked() },
                     frameEdited = { viewModel.frameEdited() },
+                    onInstrumentClicked = { instrument -> viewModel.onInstrumentClicked(instrument) }
                 )
             }
         }

@@ -36,6 +36,22 @@ internal data class MainScreenState(
     } else {
         InstrumentState.ENABLED
     }
+
+    val pencilState get() = if (currentScreen == CurrentScreen.Play) {
+        InstrumentState.DISABLED
+    } else if (currentInstrument == Instrument.Pencil) {
+        InstrumentState.SELECTED
+    } else {
+        InstrumentState.ENABLED
+    }
+
+    val eraseState get() = if (currentScreen == CurrentScreen.Play) {
+        InstrumentState.DISABLED
+    } else if (currentInstrument == Instrument.Erase) {
+        InstrumentState.SELECTED
+    } else {
+        InstrumentState.ENABLED
+    }
 }
 
 enum class InstrumentState {
@@ -63,7 +79,7 @@ internal data class PathData(
 )
 
 internal enum class Instrument {
-    Pen, Pencil, Erase, Circle, Triangle, Square
+    Pencil, Erase
 }
 
 internal enum class CurrentScreen {
