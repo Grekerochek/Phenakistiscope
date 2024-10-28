@@ -74,140 +74,16 @@ internal fun MainScreenContent(
             .padding(horizontal = 16.dp)
     ) {
         Spacer(modifier = Modifier.padding(top = 16.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .background(color = colorResource(id = R.color.main_color)),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable {
-                        if (pathList.isNotEmpty()) {
-                            val removedPath = pathList.removeAt(pathList.size - 1)
-                            removedPathList.add(removedPath)
-                        }
-                    },
-                imageVector = ImageVector.vectorResource(id = R.drawable.arrow_back),
-                contentDescription = "back",
-                tint = if (pathList.isEmpty()) {
-                    colorResource(id = R.color.disabled_icon_color)
-                } else {
-                    colorResource(id = R.color.enabled_icon_color)
-                },
-            )
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable {
-                        if (removedPathList.isNotEmpty()) {
-                            val restoredPath = removedPathList.removeAt(removedPathList.size - 1)
-                            pathList.add(restoredPath)
-                        }
-                    },
-                imageVector = ImageVector.vectorResource(id = R.drawable.arrow_forward),
-                contentDescription = "forward",
-                tint = if (removedPathList.isEmpty()) {
-                    colorResource(id = R.color.disabled_icon_color)
-                } else {
-                    colorResource(id = R.color.enabled_icon_color)
-                },
-            )
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable {
-                        onAddFrameClicked(Frame(pathList.toList(), removedPathList.toList()))
-                        pathList.clear()
-                    },
-                imageVector = ImageVector.vectorResource(id = R.drawable.add_frame),
-                contentDescription = "new frame",
-                tint = colorResource(
-                    id = if (mainScreenState.isAddFrameEnabled) {
-                        R.color.enabled_icon_color
-                    } else {
-                        R.color.disabled_icon_color
-                    }
-                ),
-            )
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable { onPlayClicked() },
-                imageVector = ImageVector.vectorResource(id = R.drawable.play),
-                contentDescription = "play",
-                tint = colorResource(
-                    id = when (mainScreenState.playState) {
-                        SELECTED -> R.color.selected_icon_color
-                        ENABLED -> R.color.enabled_icon_color
-                        DISABLED -> R.color.disabled_icon_color
-                    }
-                ),
-            )
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable { onPauseClicked() },
-                imageVector = ImageVector.vectorResource(id = R.drawable.pause),
-                contentDescription = "pause",
-                tint = colorResource(
-                    id = if (mainScreenState.isPauseEnabled) {
-                        R.color.enabled_icon_color
-                    } else {
-                        R.color.disabled_icon_color
-                    }
-                )
-            )
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable { onRemoveFrameClicked() },
-                imageVector = ImageVector.vectorResource(id = R.drawable.bin),
-                contentDescription = "remove frame",
-                tint = colorResource(
-                    id = if (mainScreenState.isBinEnabled) {
-                        R.color.enabled_icon_color
-                    } else {
-                        R.color.disabled_icon_color
-                    }
-                ),
-            )
-            Button(
-                colors = ButtonDefaults.buttonColors(Color.Black),
-                onClick = {
-                    changeColor(Color.Black)
-                },
-                modifier = Modifier
-                    .padding(3.dp)
-                    .width(40.dp)
-            ) {
-                // Black button
-            }
-            Button(
-                colors = ButtonDefaults.buttonColors(Color.Red),
-                onClick = {
-                    changeColor(Color.Red)
-                },
-                modifier = Modifier
-                    .padding(3.dp)
-                    .width(40.dp)
-            ) {
-                // Black button
-            }
-            Button(
-                colors = ButtonDefaults.buttonColors(Color.Blue),
-                onClick = {
-                    changeColor(Color.Blue)
-                },
-                modifier = Modifier
-                    .padding(3.dp)
-                    .width(40.dp)
-            ) {
-                // Blue button
-            }
-        }
+        TopBar(
+            pathList = pathList,
+            removedPathList = removedPathList,
+            mainScreenState = mainScreenState,
+            onAddFrameClicked = onAddFrameClicked,
+            onPauseClicked = onPauseClicked,
+            onPlayClicked = onPlayClicked,
+            onRemoveFrameClicked = onRemoveFrameClicked,
+            changeColor = changeColor,
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -239,44 +115,204 @@ internal fun MainScreenContent(
             }
 
         }
-        Row(
+
+        BottomBar(mainScreenState = mainScreenState, onInstrumentClicked = onInstrumentClicked)
+    }
+}
+
+@Composable
+private fun TopBar(
+    pathList: SnapshotStateList<PathData>,
+    removedPathList: SnapshotStateList<PathData>,
+    mainScreenState: MainScreenState,
+    onAddFrameClicked: (Frame) -> Unit,
+    onPauseClicked: () -> Unit,
+    onPlayClicked: () -> Unit,
+    onRemoveFrameClicked: () -> Unit,
+    changeColor: (Color) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp)
+            .background(color = colorResource(id = R.color.main_color)),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val backButtonIsEnabled =
+            mainScreenState.currentScreen == CurrentScreen.Edit && pathList.isNotEmpty()
+        Icon(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .background(color = colorResource(id = R.color.main_color)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+                .clip(CircleShape)
+                .clickable {
+                    if (backButtonIsEnabled) {
+                        val removedPath = pathList.removeAt(pathList.size - 1)
+                        removedPathList.add(removedPath)
+                    }
+                },
+            imageVector = ImageVector.vectorResource(id = R.drawable.arrow_back),
+            contentDescription = "back",
+            tint = if (backButtonIsEnabled) {
+                colorResource(id = R.color.enabled_icon_color)
+            } else {
+                colorResource(id = R.color.disabled_icon_color)
+            },
+        )
+        val forwardButtonIsEnabled =
+            mainScreenState.currentScreen == CurrentScreen.Edit && removedPathList.isNotEmpty()
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable {
+                    if (forwardButtonIsEnabled) {
+                        val restoredPath = removedPathList.removeAt(removedPathList.size - 1)
+                        pathList.add(restoredPath)
+                    }
+                },
+            imageVector = ImageVector.vectorResource(id = R.drawable.arrow_forward),
+            contentDescription = "forward",
+            tint = if (forwardButtonIsEnabled) {
+                colorResource(id = R.color.enabled_icon_color)
+            } else {
+                colorResource(id = R.color.disabled_icon_color)
+            },
+        )
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable {
+                    onAddFrameClicked(Frame(pathList.toList(), removedPathList.toList()))
+                    pathList.clear()
+                },
+            imageVector = ImageVector.vectorResource(id = R.drawable.add_frame),
+            contentDescription = "new frame",
+            tint = colorResource(
+                id = if (mainScreenState.isAddFrameEnabled) {
+                    R.color.enabled_icon_color
+                } else {
+                    R.color.disabled_icon_color
+                }
+            ),
+        )
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable { onPlayClicked() },
+            imageVector = ImageVector.vectorResource(id = R.drawable.play),
+            contentDescription = "play",
+            tint = colorResource(
+                id = when (mainScreenState.playState) {
+                    SELECTED -> R.color.selected_icon_color
+                    ENABLED -> R.color.enabled_icon_color
+                    DISABLED -> R.color.disabled_icon_color
+                }
+            ),
+        )
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable { onPauseClicked() },
+            imageVector = ImageVector.vectorResource(id = R.drawable.pause),
+            contentDescription = "pause",
+            tint = colorResource(
+                id = if (mainScreenState.isPauseEnabled) {
+                    R.color.enabled_icon_color
+                } else {
+                    R.color.disabled_icon_color
+                }
+            )
+        )
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable { onRemoveFrameClicked() },
+            imageVector = ImageVector.vectorResource(id = R.drawable.bin),
+            contentDescription = "remove frame",
+            tint = colorResource(
+                id = if (mainScreenState.isBinEnabled) {
+                    R.color.enabled_icon_color
+                } else {
+                    R.color.disabled_icon_color
+                }
+            ),
+        )
+        Button(
+            colors = ButtonDefaults.buttonColors(Color.Black),
+            onClick = {
+                changeColor(Color.Black)
+            },
+            modifier = Modifier
+                .padding(3.dp)
+                .width(40.dp)
         ) {
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable { onInstrumentClicked(Instrument.Pencil) },
-                imageVector = ImageVector.vectorResource(id = R.drawable.pencil),
-                contentDescription = "pencil",
-                tint = colorResource(
-                    id = when (mainScreenState.pencilState) {
-                        SELECTED -> R.color.selected_icon_color
-                        ENABLED -> R.color.enabled_icon_color
-                        DISABLED -> R.color.disabled_icon_color
-                    }
-                ),
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable { onInstrumentClicked(Instrument.Erase) },
-                imageVector = ImageVector.vectorResource(id = R.drawable.erase),
-                contentDescription = "erase",
-                tint = colorResource(
-                    id = when (mainScreenState.eraseState) {
-                        SELECTED -> R.color.selected_icon_color
-                        ENABLED -> R.color.enabled_icon_color
-                        DISABLED -> R.color.disabled_icon_color
-                    }
-                ),
-            )
+            // Black button
         }
+        Button(
+            colors = ButtonDefaults.buttonColors(Color.Red),
+            onClick = {
+                changeColor(Color.Red)
+            },
+            modifier = Modifier
+                .padding(3.dp)
+                .width(40.dp)
+        ) {
+            // Black button
+        }
+        Button(
+            colors = ButtonDefaults.buttonColors(Color.Blue),
+            onClick = {
+                changeColor(Color.Blue)
+            },
+            modifier = Modifier
+                .padding(3.dp)
+                .width(40.dp)
+        ) {
+            // Blue button
+        }
+    }
+}
+
+@Composable
+private fun BottomBar(
+    mainScreenState: MainScreenState,
+    onInstrumentClicked: (Instrument) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp)
+            .background(color = colorResource(id = R.color.main_color)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable { onInstrumentClicked(Instrument.Pencil) },
+            imageVector = ImageVector.vectorResource(id = R.drawable.pencil),
+            contentDescription = "pencil",
+            tint = colorResource(
+                id = when (mainScreenState.pencilState) {
+                    SELECTED -> R.color.selected_icon_color
+                    ENABLED -> R.color.enabled_icon_color
+                    DISABLED -> R.color.disabled_icon_color
+                }
+            ),
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Icon(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable { onInstrumentClicked(Instrument.Erase) },
+            imageVector = ImageVector.vectorResource(id = R.drawable.erase),
+            contentDescription = "erase",
+            tint = colorResource(
+                id = when (mainScreenState.eraseState) {
+                    SELECTED -> R.color.selected_icon_color
+                    ENABLED -> R.color.enabled_icon_color
+                    DISABLED -> R.color.disabled_icon_color
+                }
+            ),
+        )
     }
 }
 
