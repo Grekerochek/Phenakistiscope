@@ -1,26 +1,24 @@
-package com.example.phenakistiscope
+package com.example.phenakistiscope.ui.theme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.unit.dp
+import com.example.phenakistiscope.R
 
 @Composable
-internal fun Pallet(
+internal fun SpeedPanel(
     modifier: Modifier = Modifier,
-    onColorSelected: (Color) -> Unit,
+    onSpeedSelected: (Int) -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -31,20 +29,20 @@ internal fun Pallet(
             .padding(all = dimensionResource(id = R.dimen.main_dimen)),
         horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.main_dimen)),
     ) {
-        BoxColor(color = Color.Red, onColorSelected = onColorSelected)
-        BoxColor(color = Color.Blue, onColorSelected = onColorSelected)
-        BoxColor(color = Color.Green, onColorSelected = onColorSelected)
-        BoxColor(color = Color.Black, onColorSelected = onColorSelected)
+        CurrentSpeed(speed = 1, onSpeedSelected = onSpeedSelected)
+        CurrentSpeed(speed = 2, onSpeedSelected = onSpeedSelected)
+        CurrentSpeed(speed = 3, onSpeedSelected = onSpeedSelected)
     }
 }
 
 @Composable
-private fun BoxColor(color: Color, onColorSelected: (Color) -> Unit) {
-    Box(
+private fun CurrentSpeed(speed: Int, onSpeedSelected: (Int) -> Unit) {
+    Text(
+        text = speed.toString(),
         modifier = Modifier
-            .size(32.dp)
             .clip(CircleShape)
-            .background(color = color)
-            .clickable { onColorSelected(color) }
+            .clickable {
+                onSpeedSelected(speed)
+            }
     )
 }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -33,16 +34,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import com.example.phenakistiscope.InstrumentState.*
+import com.example.phenakistiscope.InstrumentState.DISABLED
+import com.example.phenakistiscope.InstrumentState.ENABLED
+import com.example.phenakistiscope.InstrumentState.SELECTED
+import com.example.phenakistiscope.ui.theme.SpeedPanel
+import com.example.phenakistiscope.ui.theme.StylePanel
+
 
 @Composable
 internal fun MainScreenContent(
@@ -51,9 +60,14 @@ internal fun MainScreenContent(
     onPlayClicked: () -> Unit = {},
     onPauseClicked: () -> Unit = {},
     onRemoveFrameClicked: () -> Unit = {},
-    frameEdited: () -> Unit = {},
     onInstrumentClicked: (Instrument) -> Unit = {},
     changeColor: (Color) -> Unit = {},
+    changeStyle: (Float) -> Unit = {},
+    changeSpeed: (Int) -> Unit = {},
+    onGenerateSelected: (Int) -> Unit = {},
+    onGenerateClicked: () -> Unit = {},
+    onSizeChanged: (Int, Int) -> Unit = { _, _ -> },
+    closeGeneratePanel: () -> Unit = {},
 ) {
     val pathList = remember {
         mutableStateListOf<PathData>()
@@ -63,19 +77,9 @@ internal fun MainScreenContent(
         mutableStateListOf<PathData>()
     }
 
-    val currentEditFrame = mainScreenState.currentEditFrame
-
-    if (currentEditFrame != null) {
-        pathList.clear()
-        removedPathList.clear()
-
-        pathList.addAll(currentEditFrame.pathList)
-        removedPathList.addAll(currentEditFrame.removedPathList)
-
-        frameEdited()
-    }
-
     var isPalletOpened by rememberSaveable { mutableStateOf(false) }
+    var isStylePanelOpened by rememberSaveable { mutableStateOf(false) }
+    var isSpeedPanelOpened by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -92,6 +96,8 @@ internal fun MainScreenContent(
             onPauseClicked = onPauseClicked,
             onPlayClicked = onPlayClicked,
             onRemoveFrameClicked = onRemoveFrameClicked,
+            onGenerateClicked = onGenerateClicked,
+            openSpeedPanel = { isSpeedPanelOpened = !isSpeedPanelOpened },
         )
         Box(
             modifier = Modifier
@@ -104,9 +110,8 @@ internal fun MainScreenContent(
         ) {
             when (mainScreenState.currentScreen) {
                 CurrentScreen.Edit -> {
-                    val previousListPath = mainScreenState.getPreviousPathList()
-                    if (previousListPath != null) {
-                        PreviousFrame(pathList = previousListPath)
+                    if (mainScreenState.previousBitmap != null) {
+                        PreviousFrame(mainScreenState.previousBitmap)
                     }
                     DrawCanvas(
                         modifier = Modifier
@@ -114,10 +119,13 @@ internal fun MainScreenContent(
                         pathList = pathList,
                         removedPathList = removedPathList,
                         mainScreenState = mainScreenState,
+                        onSizeChanged = onSizeChanged,
                     )
                 }
 
-                CurrentScreen.Play -> PlayScreenContent(mainScreenState = mainScreenState)
+                CurrentScreen.Play -> {
+                    PlayScreenContent(mainScreenState.currentPlayingBitmap)
+                }
             }
 
             Box(
@@ -130,6 +138,22 @@ internal fun MainScreenContent(
                         alpha = 0.1f, // used for better design
                     )
             )
+
+            if (mainScreenState.currentScreen == CurrentScreen.Edit && isSpeedPanelOpened) {
+                SpeedPanel(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(
+                            top = dimensionResource(
+                                id = R.dimen.main_dimen
+                            )
+                        ),
+                    onSpeedSelected = { speed ->
+                        changeSpeed(speed)
+                        isSpeedPanelOpened = false
+                    }
+                )
+            }
 
             if (mainScreenState.currentScreen == CurrentScreen.Edit && isPalletOpened) {
                 Pallet(
@@ -146,12 +170,54 @@ internal fun MainScreenContent(
                     }
                 )
             }
+
+            if (mainScreenState.currentScreen == CurrentScreen.Edit && isStylePanelOpened) {
+                StylePanel(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(
+                            bottom = dimensionResource(
+                                id = R.dimen.main_dimen
+                            )
+                        ),
+                    currentColor = mainScreenState.currentColor,
+                    onStyleSelected = { width ->
+                        changeStyle(width)
+                        isStylePanelOpened = false
+                    }
+                )
+            }
+
+            if (mainScreenState.isAddFrameEnabled && mainScreenState.isGeneratePanelOpened) {
+                GeneratePanel(
+                    mainScreenState = mainScreenState,
+                    onGenerateSelected = { frameNumbers ->
+                        onGenerateSelected(frameNumbers)
+                    },
+                    dismissClicked = {
+                        if (!mainScreenState.isGenerating) {
+                            closeGeneratePanel()
+                        }
+                    }
+                )
+            }
         }
 
         BottomBar(
             mainScreenState = mainScreenState,
             onInstrumentClicked = onInstrumentClicked,
-            onPalletOpened = { isPalletOpened = true },
+            onPalletOpened = {
+                if (isStylePanelOpened) {
+                    isStylePanelOpened = false
+                }
+                isPalletOpened = !isPalletOpened
+            },
+            onStylePanelOpened = {
+                if (isPalletOpened) {
+                    isPalletOpened = false
+                }
+                isStylePanelOpened = !isStylePanelOpened
+            }
         )
     }
 }
@@ -165,6 +231,8 @@ private fun TopBar(
     onPauseClicked: () -> Unit,
     onPlayClicked: () -> Unit,
     onRemoveFrameClicked: () -> Unit,
+    onGenerateClicked: () -> Unit,
+    openSpeedPanel: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -172,103 +240,156 @@ private fun TopBar(
             .height(100.dp)
             .background(color = colorResource(id = R.color.main_color)),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        val backButtonIsEnabled =
-            mainScreenState.currentScreen == CurrentScreen.Edit && pathList.isNotEmpty()
-        Icon(
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable {
-                    if (backButtonIsEnabled) {
-                        val removedPath = pathList.removeAt(pathList.size - 1)
-                        removedPathList.add(removedPath)
-                    }
-                },
-            imageVector = ImageVector.vectorResource(id = R.drawable.arrow_back),
-            contentDescription = "back",
-            tint = if (backButtonIsEnabled) {
-                colorResource(id = R.color.enabled_icon_color)
-            } else {
-                colorResource(id = R.color.disabled_icon_color)
-            },
-        )
-        val forwardButtonIsEnabled =
-            mainScreenState.currentScreen == CurrentScreen.Edit && removedPathList.isNotEmpty()
-        Icon(
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable {
-                    if (forwardButtonIsEnabled) {
-                        val restoredPath = removedPathList.removeAt(removedPathList.size - 1)
-                        pathList.add(restoredPath)
-                    }
-                },
-            imageVector = ImageVector.vectorResource(id = R.drawable.arrow_forward),
-            contentDescription = "forward",
-            tint = if (forwardButtonIsEnabled) {
-                colorResource(id = R.color.enabled_icon_color)
-            } else {
-                colorResource(id = R.color.disabled_icon_color)
-            },
-        )
-        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+        Spacer(modifier = Modifier.width(40.dp))
 
-        Icon(
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable { onPlayClicked() },
-            imageVector = ImageVector.vectorResource(id = R.drawable.play),
-            contentDescription = "play",
-            tint = colorResource(
-                id = when (mainScreenState.playState) {
-                    SELECTED -> R.color.selected_icon_color
-                    ENABLED -> R.color.enabled_icon_color
-                    DISABLED -> R.color.disabled_icon_color
-                }
-            ),
-        )
-        Icon(
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable { onPauseClicked() },
-            imageVector = ImageVector.vectorResource(id = R.drawable.pause),
-            contentDescription = "pause",
-            tint = colorResource(
-                id = if (mainScreenState.isPauseEnabled) {
-                    R.color.enabled_icon_color
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val backButtonIsEnabled =
+                mainScreenState.currentScreen == CurrentScreen.Edit && pathList.isNotEmpty()
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        if (backButtonIsEnabled) {
+                            val removedPath = pathList.removeAt(pathList.size - 1)
+                            removedPathList.add(removedPath)
+                        }
+                    },
+                imageVector = ImageVector.vectorResource(id = R.drawable.arrow_back),
+                contentDescription = "back",
+                tint = if (backButtonIsEnabled) {
+                    colorResource(id = R.color.enabled_icon_color)
                 } else {
-                    R.color.disabled_icon_color
-                }
+                    colorResource(id = R.color.disabled_icon_color)
+                },
             )
-        )
-        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+            val forwardButtonIsEnabled =
+                mainScreenState.currentScreen == CurrentScreen.Edit && removedPathList.isNotEmpty()
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        if (forwardButtonIsEnabled) {
+                            val restoredPath = removedPathList.removeAt(removedPathList.size - 1)
+                            pathList.add(restoredPath)
+                        }
+                    },
+                imageVector = ImageVector.vectorResource(id = R.drawable.arrow_forward),
+                contentDescription = "forward",
+                tint = if (forwardButtonIsEnabled) {
+                    colorResource(id = R.color.enabled_icon_color)
+                } else {
+                    colorResource(id = R.color.disabled_icon_color)
+                },
+            )
+            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+
+            Icon(
+                modifier = Modifier
+                    .size(26.dp)
+                    .padding(all = 1.dp).clip(CircleShape)
+                    .clickable { onPlayClicked() },
+                imageVector = ImageVector.vectorResource(id = R.drawable.play),
+                contentDescription = "play",
+                tint = colorResource(
+                    id = when (mainScreenState.playState) {
+                        SELECTED -> R.color.selected_icon_color
+                        ENABLED -> R.color.enabled_icon_color
+                        DISABLED -> R.color.disabled_icon_color
+                    }
+                ),
+            )
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onPauseClicked() },
+                imageVector = ImageVector.vectorResource(id = R.drawable.pause),
+                contentDescription = "pause",
+                tint = colorResource(
+                    id = if (mainScreenState.isPauseEnabled) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                )
+            )
+            Text(
+                text = "Speed",
+                color = colorResource(
+                    id =
+                    if (mainScreenState.currentScreen == CurrentScreen.Edit) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                ),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { openSpeedPanel() }
+                    .padding(horizontal = 4.dp),
+            )
+            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        if (mainScreenState.isAddFrameEnabled) {
+                            onAddFrameClicked(
+                                Frame(
+                                    pathList = pathList.toList(),
+                                    bitmap = mainScreenState.currentBitmap,
+                                )
+                            )
+                            pathList.clear()
+                        }
+                    },
+                imageVector = ImageVector.vectorResource(id = R.drawable.add_frame),
+                contentDescription = "new frame",
+                tint = colorResource(
+                    id = if (mainScreenState.isAddFrameEnabled) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                ),
+            )
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        onRemoveFrameClicked()
+                    },
+                imageVector = ImageVector.vectorResource(id = R.drawable.bin),
+                contentDescription = "remove frame",
+                tint = colorResource(
+                    id = if (mainScreenState.isBinEnabled) {
+                        R.color.enabled_icon_color
+                    } else {
+                        R.color.disabled_icon_color
+                    }
+                ),
+            )
+        }
 
         Icon(
             modifier = Modifier
                 .clip(CircleShape)
+                .size(24.dp)
                 .clickable {
-                    onAddFrameClicked(Frame(pathList.toList(), removedPathList.toList()))
-                    pathList.clear()
-                },
-            imageVector = ImageVector.vectorResource(id = R.drawable.add_frame),
-            contentDescription = "new frame",
+                    if (mainScreenState.isAddFrameEnabled) {
+                        onGenerateClicked()
+                    }
+                }
+                .padding(3.dp),
+            imageVector = ImageVector.vectorResource(id = R.drawable.ge),
+            contentDescription = "generate frame",
             tint = colorResource(
                 id = if (mainScreenState.isAddFrameEnabled) {
-                    R.color.enabled_icon_color
-                } else {
-                    R.color.disabled_icon_color
-                }
-            ),
-        )
-        Icon(
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable { onRemoveFrameClicked() },
-            imageVector = ImageVector.vectorResource(id = R.drawable.bin),
-            contentDescription = "remove frame",
-            tint = colorResource(
-                id = if (mainScreenState.isBinEnabled) {
                     R.color.enabled_icon_color
                 } else {
                     R.color.disabled_icon_color
@@ -283,6 +404,7 @@ private fun BottomBar(
     mainScreenState: MainScreenState,
     onInstrumentClicked: (Instrument) -> Unit,
     onPalletOpened: () -> Unit,
+    onStylePanelOpened: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -324,7 +446,7 @@ private fun BottomBar(
 
         Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
 
-        // open select color pallet
+        // open select color and style panels
         if (mainScreenState.currentScreen == CurrentScreen.Edit) {
             Box(
                 modifier = Modifier
@@ -341,6 +463,19 @@ private fun BottomBar(
                     )
                     .clickable { onPalletOpened() }
             )
+
+            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
+
+            Text(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        onStylePanelOpened()
+                    }
+                    .padding(all = 2.dp),
+                text = "St",
+                color = colorResource(id = R.color.enabled_icon_color)
+            )
         }
     }
 }
@@ -351,6 +486,7 @@ private fun DrawCanvas(
     pathList: SnapshotStateList<PathData>,
     removedPathList: SnapshotStateList<PathData>,
     mainScreenState: MainScreenState,
+    onSizeChanged: (Int, Int) -> Unit,
 ) {
     var tempPath = Path()
 
@@ -364,11 +500,13 @@ private fun DrawCanvas(
                 detectDragGestures(
                     onDragStart = {
                         tempPath = Path()
+
                         pathList.add(
                             PathData(
                                 path = tempPath,
                                 color = mainScreenState.currentColor,
                                 drawStyle = mainScreenState.currentDrawStyle,
+                                blendMode = mainScreenState.blendMode,
                             )
                         )
                         removedPathList.clear()
@@ -390,6 +528,7 @@ private fun DrawCanvas(
                             path = tempPath,
                             color = mainScreenState.currentColor,
                             drawStyle = mainScreenState.currentDrawStyle,
+                            blendMode = mainScreenState.blendMode,
                         )
                     )
                 }
@@ -399,12 +538,18 @@ private fun DrawCanvas(
             modifier = Modifier
                 .fillMaxSize()
                 .clipToBounds()
+                .graphicsLayer(alpha = 0.99F)
+                .onSizeChanged { size -> onSizeChanged(size.width, size.height) }
         ) {
-            pathList.forEach { path ->
+            if (mainScreenState.currentBitmap != null) {
+                drawImage(mainScreenState.currentBitmap)
+            }
+            pathList.forEach { pathData ->
                 drawPath(
-                    path = path.path,
-                    color = path.color,
-                    style = path.drawStyle,
+                    path = pathData.path,
+                    color = pathData.color,
+                    style = pathData.drawStyle,
+                    blendMode = pathData.blendMode,
                 )
             }
         }
@@ -412,20 +557,15 @@ private fun DrawCanvas(
 }
 
 @Composable
-private fun PreviousFrame(pathList: List<PathData>) {
+private fun PreviousFrame(imageBitmap: ImageBitmap) {
     Box {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .clipToBounds()
+                .graphicsLayer(alpha = 0.99F)
         ) {
-            pathList.forEach { path ->
-                drawPath(
-                    path = path.path,
-                    color = path.color,
-                    style = path.drawStyle,
-                )
-            }
+            drawImage(imageBitmap)
         }
         Box(
             modifier = Modifier

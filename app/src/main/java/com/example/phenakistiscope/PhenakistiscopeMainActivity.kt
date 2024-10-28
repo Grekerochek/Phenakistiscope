@@ -16,6 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.phenakistiscope.ui.theme.PhenakistiscopeTheme
 import kotlinx.coroutines.flow.Flow
 
+
 internal class PhenakistiscopeMainActivity : ComponentActivity() {
 
     private val viewModel: PhenakistiscopeMainViewModel by viewModels()
@@ -35,9 +36,19 @@ internal class PhenakistiscopeMainActivity : ComponentActivity() {
                     onPlayClicked = { viewModel.onPlayClicked() },
                     onPauseClicked = { viewModel.onPauseClicked() },
                     onRemoveFrameClicked = { viewModel.onRemoveFrameClicked() },
-                    frameEdited = { viewModel.frameEdited() },
                     onInstrumentClicked = { instrument -> viewModel.onInstrumentClicked(instrument) },
-                    changeColor = { color -> viewModel.changeColor(color) }
+                    changeColor = { color -> viewModel.changeColor(color) },
+                    changeStyle = { width -> viewModel.changeStyle(width) },
+                    changeSpeed = { speed -> viewModel.changeSpeed(speed) },
+                    onGenerateSelected = { numberOfFrames -> viewModel.generateFrames(numberOfFrames) },
+                    onSizeChanged = { width, height ->
+                        viewModel.updateWidthHeightOfTheFrame(
+                            width,
+                            height
+                        )
+                    },
+                    onGenerateClicked = { viewModel.onGenerateClicked() },
+                    closeGeneratePanel = { viewModel.closeGeneratePanel() }
                 )
             }
         }

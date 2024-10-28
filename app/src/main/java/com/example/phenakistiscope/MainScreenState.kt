@@ -3,6 +3,7 @@ package com.example.phenakistiscope
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -11,36 +12,40 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 internal data class MainScreenState(
     val currentColor: Color = Color.Black,
     val previousColor: Color = Color.Black,
-    val currentDrawStyle: DrawStyle = Stroke(16f),
+    val currentDrawStyle: DrawStyle = Stroke(10f),
     val currentInstrument: Instrument = Instrument.Pencil,
-    val frames: List<Frame> = emptyList(),
     val currentScreen: CurrentScreen = CurrentScreen.Edit,
-    val currentEditFrame: Frame? = null,
+    val frameWidth: Int = 500,
+    val frameHeight: Int = 500,
+    val currentIndex: Long = 0,
+    val currentBitmap: ImageBitmap? = null,
+    val previousBitmap: ImageBitmap? = null,
+    val currentPlayingBitmap: ImageBitmap? = null,
+    val speed: Int = 1,
+    val isGenerating: Boolean = false,
+    val isGeneratePanelOpened: Boolean = false,
 ) {
-    fun getPreviousPathList(): List<PathData>? {
-        return if (frames.isEmpty()) {
-            null
-        } else {
-            frames.last().pathList
-        }
+
+    val blendMode: BlendMode get() = if (currentInstrument == Instrument.Eraser) {
+        BlendMode.Clear
+    } else {
+        BlendMode.SrcOver
     }
 
-    val isBinEnabled get() = currentScreen == CurrentScreen.Edit && frames.isNotEmpty()
+    val isBinEnabled: Boolean get() = currentScreen == CurrentScreen.Edit && currentIndex > 0
 
-    val isAddFrameEnabled get() = currentScreen == CurrentScreen.Edit
+    val isPauseEnabled: Boolean get() = currentScreen == CurrentScreen.Play
 
-    val isPauseEnabled get() = currentScreen == CurrentScreen.Play
-
-    val playState
+    val playState: InstrumentState
         get() = if (currentScreen == CurrentScreen.Play) {
             InstrumentState.SELECTED
-        } else if (frames.size < 2) {
+        } else if (currentIndex < 2) {
             InstrumentState.DISABLED
         } else {
             InstrumentState.ENABLED
         }
 
-    val pencilState
+    val pencilState: InstrumentState
         get() = if (currentScreen == CurrentScreen.Play) {
             InstrumentState.DISABLED
         } else if (currentInstrument == Instrument.Pencil) {
@@ -49,7 +54,7 @@ internal data class MainScreenState(
             InstrumentState.ENABLED
         }
 
-    val eraserState
+    val eraserState: InstrumentState
         get() = if (currentScreen == CurrentScreen.Play) {
             InstrumentState.DISABLED
         } else if (currentInstrument == Instrument.Eraser) {
@@ -57,6 +62,25 @@ internal data class MainScreenState(
         } else {
             InstrumentState.ENABLED
         }
+
+    val isAddFrameEnabled: Boolean
+        get() = currentScreen == CurrentScreen.Edit && currentIndex <= Int.MAX_VALUE
+
+    fun getNumberOfFramesForAdding(): List<Int> {
+        val itemSize = (Int.MAX_VALUE - currentIndex.toInt())
+
+        val items = mutableListOf<Int>()
+
+        var cur = 1L
+
+        while (cur < itemSize) {
+            items.add(cur.toInt())
+            cur *= 2
+        }
+        items.add(itemSize)
+
+        return items
+    }
 }
 
 enum class InstrumentState {
@@ -64,16 +88,16 @@ enum class InstrumentState {
 }
 
 @Stable
-internal data class Frame(
+internal class Frame(
+    val bitmap: ImageBitmap? = null,
     val pathList: List<PathData> = emptyList(),
-    val removedPathList: List<PathData> = emptyList(),
 )
 
 @Stable
 internal data class PathData(
     val path: Path = Path(),
     val color: Color = Color.Black,
-    val drawStyle: DrawStyle = Stroke(1f),
+    val drawStyle: DrawStyle = Stroke(16f),
     val blendMode: BlendMode = BlendMode.SrcOver,
 )
 
