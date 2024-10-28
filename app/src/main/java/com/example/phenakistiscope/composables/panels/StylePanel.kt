@@ -1,4 +1,4 @@
-package com.example.phenakistiscope
+package com.example.phenakistiscope.composables.panels
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,17 +10,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
+import com.example.phenakistiscope.R
 
 @Composable
-internal fun Pallet(
+internal fun StylePanel(
     modifier: Modifier = Modifier,
-    onColorSelected: (Color) -> Unit,
+    currentColor: Color,
+    onStyleSelected: (Float) -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -31,20 +34,21 @@ internal fun Pallet(
             .padding(all = dimensionResource(id = R.dimen.main_dimen)),
         horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.main_dimen)),
     ) {
-        BoxColor(color = Color.Red, onColorSelected = onColorSelected)
-        BoxColor(color = Color.Blue, onColorSelected = onColorSelected)
-        BoxColor(color = Color.Green, onColorSelected = onColorSelected)
-        BoxColor(color = Color.Black, onColorSelected = onColorSelected)
+        val color = if (currentColor == Color.Transparent) Color.White else currentColor
+        BoxStyle(color = color, stoke = 8f, onStyleSelected = onStyleSelected)
+        BoxStyle(color = color, stoke = 16f, onStyleSelected = onStyleSelected)
+        BoxStyle(color = color, stoke = 32f, onStyleSelected = onStyleSelected)
     }
 }
 
 @Composable
-private fun BoxColor(color: Color, onColorSelected: (Color) -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .background(color = color)
-            .clickable { onColorSelected(color) }
-    )
+private fun BoxStyle(color: Color, stoke: Float, onStyleSelected: (Float) -> Unit) {
+    Box(modifier = Modifier.size(20.dp).clickable { onStyleSelected(stoke) }) {
+        Box(
+            modifier = Modifier.align(Alignment.Center)
+                .size(stoke.dp)
+                .clip(CircleShape)
+                .background(color = color)
+        )
+    }
 }

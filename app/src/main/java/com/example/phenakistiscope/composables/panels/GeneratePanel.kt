@@ -1,4 +1,4 @@
-package com.example.phenakistiscope
+package com.example.phenakistiscope.composables.panels
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.phenakistiscope.MainScreenState
+import com.example.phenakistiscope.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,20 +51,20 @@ internal fun GeneratePanel(
 
             Text(modifier = Modifier, text = " It may take a long time")
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.main_dimen)))
-            TextField(
-                value = currentValue, onValueChange = { newValue ->
-                    val intValue = newValue.toIntOrNull() ?: return@TextField
-                    if (intValue <= Int.MAX_VALUE - mainScreenState.currentIndex && intValue > 0) {
-                        currentValue = newValue
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.main_dimen)))
 
             if (mainScreenState.isGenerating) {
                 CircularProgressIndicator()
             } else {
+                TextField(
+                    value = currentValue, onValueChange = { newValue ->
+                        val intValue = newValue.toIntOrNull() ?: return@TextField
+                        if (intValue <= (Int.MAX_VALUE - mainScreenState.currentIndex) && intValue > 0) {
+                            currentValue = newValue
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.main_dimen)))
                 Text(
                     modifier = Modifier
                         .background(
@@ -76,6 +78,7 @@ internal fun GeneratePanel(
                             }
                         }
                         .padding(horizontal = dimensionResource(id = R.dimen.main_dimen)),
+                    color = colorResource(id = R.color.enabled_icon_color),
                     text = "Generate"
                 )
             }

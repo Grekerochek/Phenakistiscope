@@ -177,7 +177,7 @@ internal class PhenakistiscopeMainViewModel(application: Application) : AndroidV
         _currentScreenState.update { it.copy(isGenerating = true) }
         viewModelScope.launch(Dispatchers.Default) {
             var next = true
-            var j = 10f
+            var j = 110f
 
             val pathData = PathData(
                 path = Path().apply {
@@ -185,7 +185,7 @@ internal class PhenakistiscopeMainViewModel(application: Application) : AndroidV
                         Rect(
                             Offset(
                                 (currentScreenState.value.frameWidth / 2).toFloat(),
-                                100f
+                                j
                             ), 100f
                         )
                     )
@@ -221,7 +221,7 @@ internal class PhenakistiscopeMainViewModel(application: Application) : AndroidV
         }
     }
 
-    fun bitmapLoaded(bitmap: Bitmap?, isForPrevious: Boolean?) {
+    private fun bitmapLoaded(bitmap: Bitmap?, isForPrevious: Boolean?) {
         if (bitmap != null) {
             var currentPlayingBitmap = _currentScreenState.value.currentPlayingBitmap
             _currentScreenState.update {

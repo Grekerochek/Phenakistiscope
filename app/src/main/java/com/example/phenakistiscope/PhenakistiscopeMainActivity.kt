@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.phenakistiscope.composables.MainScreenContent
 import com.example.phenakistiscope.ui.theme.PhenakistiscopeTheme
 import kotlinx.coroutines.flow.Flow
 

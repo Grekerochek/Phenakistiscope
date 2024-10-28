@@ -1,4 +1,4 @@
-package com.example.phenakistiscope
+package com.example.phenakistiscope.composables
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +20,7 @@ internal fun PlayScreenContent(
             .clipToBounds()
             .graphicsLayer(alpha = 0.99F)
     ) {
-        if (imageBitmap != null) {
+        if (imageBitmap != null && !imageBitmap.asAndroidBitmap().isRecycled) {
             drawImage(imageBitmap)
         }
     }
