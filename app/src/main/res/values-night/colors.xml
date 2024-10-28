@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="main_color">#F1CCF3FF</color>
+    <color name="main_color">#FF000000</color>
     <color name="canvas_color">#FFFFFFFF</color>
-    <color name="enabled_icon_color">#FF000000</color>
+    <color name="enabled_icon_color">#FFFFFFFF</color>
     <color name="disabled_icon_color">#FF8B8B8B</color>
 </resources>
