@@ -34,6 +34,7 @@ internal class PhenakistiscopeMainActivity : ComponentActivity() {
                     onAddFileClicked = { pathList -> viewModel.onAddFileClicked(pathList) },
                     onPlayClicked = { viewModel.onPlayClicked() },
                     onPauseClicked = { viewModel.onPauseClicked() },
+                    upCurrentIndex = { viewModel.upCurrentIndex() }
                 )
             }
         }

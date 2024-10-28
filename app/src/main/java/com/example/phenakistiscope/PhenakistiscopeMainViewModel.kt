@@ -29,4 +29,16 @@ internal class PhenakistiscopeMainViewModel : ViewModel() {
     fun onPauseClicked() {
         _currentStateScreen.update { it.copy(currentScreen = CurrentScreen.Edit) }
     }
+
+    fun upCurrentIndex() {
+        _currentStateScreen.update {
+            it.copy(
+                currentIndex = if (it.currentIndex + 1 == it.pathLists.size) {
+                    0
+                } else {
+                    it.currentIndex + 1
+                }
+            )
+        }
+    }
 }

@@ -43,6 +43,7 @@ internal fun MainScreenContent(
     onAddFileClicked: (List<PathData>) -> Unit = {},
     onPlayClicked: () -> Unit = {},
     onPauseClicked: () -> Unit = {},
+    upCurrentIndex: () -> Unit = {},
 ) {
     val drawScreenState = remember { mutableStateOf(DrawScreenState()) }
 
@@ -195,7 +196,7 @@ internal fun MainScreenContent(
                     alpha = if (isItFirstFile) 1f else 0.1f
                 )
             } else {
-                PlayScreenContent(mainScreenState = mainScreenState)
+                PlayScreenContent(mainScreenState = mainScreenState, upCurrentIndex = upCurrentIndex)
             }
         }
         Row(
