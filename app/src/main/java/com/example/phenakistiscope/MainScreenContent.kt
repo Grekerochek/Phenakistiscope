@@ -94,7 +94,6 @@ internal fun MainScreenContent(
             onPauseClicked = onPauseClicked,
             onPlayClicked = onPlayClicked,
             onRemoveFrameClicked = onRemoveFrameClicked,
-            changeColor = changeColor,
         )
         Box(
             modifier = Modifier
@@ -168,7 +167,6 @@ private fun TopBar(
     onPauseClicked: () -> Unit,
     onPlayClicked: () -> Unit,
     onRemoveFrameClicked: () -> Unit,
-    changeColor: (Color) -> Unit,
 ) {
     Row(
         modifier = Modifier
