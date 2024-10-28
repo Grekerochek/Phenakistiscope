@@ -65,13 +65,6 @@ internal data class Frame(
 )
 
 @Stable
-internal data class DrawScreenState(
-    val currentColor: Color = Color.Black,
-    val currentDrawStyle: DrawStyle = Stroke(1f),
-    val currentInstrument: Instrument = Instrument.Pencil,
-)
-
-@Stable
 internal data class PathData(
     val path: Path = Path(),
     val color: Color = Color.Black,

@@ -1,5 +1,6 @@
 package com.example.phenakistiscope
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -65,5 +66,9 @@ internal class PhenakistiscopeMainViewModel : ViewModel() {
                 it.copy(currentInstrument = instrument,)
             }
         }
+    }
+
+    fun changeColor(color: Color) {
+        _currentScreenState.update { it.copy(currentColor = color) }
     }
 }
