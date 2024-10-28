@@ -38,7 +38,10 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun DrawScreen() {
+fun MainScreenContent(
+    mainScreenState: MainScreenState,
+    onAddFileClicked: (List<PathData>) -> Unit,
+) {
     val drawScreenState = remember { mutableStateOf(DrawScreenState()) }
 
     val pathList = remember {
@@ -97,9 +100,22 @@ fun DrawScreen() {
                     colorResource(id = R.color.enabled_icon_color)
                 },
             )
+            Icon(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        onAddFileClicked(pathList.toList())
+                        pathList.clear()
+                    },
+                imageVector = ImageVector.vectorResource(id = R.drawable.add_file),
+                contentDescription = "new file",
+                tint = colorResource(id = R.color.enabled_icon_color),
+            )
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Black),
-                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Black) },
+                onClick = {
+                    drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Black)
+                },
                 modifier = Modifier
                     .padding(3.dp)
                     .width(40.dp)
@@ -108,7 +124,10 @@ fun DrawScreen() {
             }
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Red),
-                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Red) },
+                onClick = {
+                    drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Red)
+
+                },
                 modifier = Modifier
                     .padding(3.dp)
                     .width(40.dp)
@@ -116,17 +135,10 @@ fun DrawScreen() {
                 // Black button
             }
             Button(
-                colors = ButtonDefaults.buttonColors(Color.Green),
-                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Green) },
-                modifier = Modifier
-                    .padding(3.dp)
-                    .width(40.dp)
-            ) {
-                // Red button
-            }
-            Button(
                 colors = ButtonDefaults.buttonColors(Color.Blue),
-                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Blue) },
+                onClick = {
+                    drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Blue)
+                },
                 modifier = Modifier
                     .padding(3.dp)
                     .width(40.dp)
@@ -143,14 +155,25 @@ fun DrawScreen() {
                 Text(text = "Clear")
             }
         }
-        DrawCanvas(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            pathList = pathList,
-            removedPathList = removedPathList,
-            drawScreenState = drawScreenState,
-        )
+                .weight(1f)
+        ) {
+            val isItFirstFile = mainScreenState.pathLists.isEmpty()
+
+            if (!isItFirstFile) {
+                PreviousFile(modifier = Modifier.fillMaxSize(), pathList = mainScreenState.pathLists.last())
+            }
+            DrawCanvas(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                pathList = pathList,
+                removedPathList = removedPathList,
+                drawScreenState = drawScreenState,
+                alpha = if (isItFirstFile) 1f else 0.1f
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,13 +192,14 @@ private fun DrawCanvas(
     pathList: SnapshotStateList<PathData>,
     removedPathList: SnapshotStateList<PathData>,
     drawScreenState: MutableState<DrawScreenState>,
+    alpha: Float,
 ) {
     var tempPath = Path()
 
     Box(
         modifier = modifier
             .background(
-                color = colorResource(id = R.color.canvas_color),
+                color = colorResource(id = R.color.canvas_color).copy(alpha = alpha),
                 shape = RoundedCornerShape(size = 20.dp)
             )
             .pointerInput(Unit) {
@@ -213,7 +237,11 @@ private fun DrawCanvas(
                 }
             }
     ) {
-        Canvas(modifier = Modifier.fillMaxSize().clipToBounds()) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .clipToBounds()
+        ) {
             pathList.forEach { path ->
                 drawPath(
                     path = path.path,
@@ -222,5 +250,35 @@ private fun DrawCanvas(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PreviousFile(modifier: Modifier = Modifier, pathList: List<PathData>) {
+    Box(
+        modifier = modifier.background(
+            color = colorResource(id = R.color.canvas_color),
+            shape = RoundedCornerShape(size = 20.dp)
+        )
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .clipToBounds()
+        ) {
+            pathList.forEach { path ->
+                drawPath(
+                    path = path.path,
+                    color = path.color,
+                    style = path.drawStyle,
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clipToBounds()
+                .background(color = Color.White.copy(alpha = 0.5f))
+        )
     }
 }
