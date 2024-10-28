@@ -1,10 +1,10 @@
 package com.example.phenakistiscope
 
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,22 +13,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.colorResource
@@ -37,11 +39,14 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun DrawScreen() {
-    var tempPath = Path()
-    var drawScreenState by remember { mutableStateOf(DrawScreenState()) }
+    val drawScreenState = remember { mutableStateOf(DrawScreenState()) }
 
-    var pp = remember {
-        mutableStateListOf(PathData())
+    val pathList = remember {
+        mutableStateListOf<PathData>()
+    }
+
+    val removedPathList = remember {
+        mutableStateListOf<PathData>()
     }
 
     Column(
@@ -59,28 +64,42 @@ fun DrawScreen() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                modifier = Modifier.clickable {
-                    pp.removeAt(pp.size-1)
-                    drawScreenState =
-                        drawScreenState.copy(pathList = drawScreenState.pathList.dropLast(1))
-                },
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        if (pathList.isNotEmpty()) {
+                            val removedPath = pathList.removeAt(pathList.size - 1)
+                            removedPathList.add(removedPath)
+                        }
+                    },
                 imageVector = ImageVector.vectorResource(id = R.drawable.arrow_back),
                 contentDescription = "back",
-                tint = if (drawScreenState.pathList.isEmpty()) {
+                tint = if (pathList.isEmpty()) {
                     colorResource(id = R.color.disabled_icon_color)
                 } else {
                     colorResource(id = R.color.enabled_icon_color)
                 },
             )
             Icon(
-                modifier = Modifier.clickable { },
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        if (removedPathList.isNotEmpty()) {
+                            val restoredPath = removedPathList.removeAt(removedPathList.size - 1)
+                            pathList.add(restoredPath)
+                        }
+                    },
                 imageVector = ImageVector.vectorResource(id = R.drawable.arrow_forward),
-                contentDescription = "back",
-                tint = Color.White,
+                contentDescription = "forward",
+                tint = if (removedPathList.isEmpty()) {
+                    colorResource(id = R.color.disabled_icon_color)
+                } else {
+                    colorResource(id = R.color.enabled_icon_color)
+                },
             )
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Black),
-                onClick = { drawScreenState = drawScreenState.copy(currentColor = Color.Black) },
+                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Black) },
                 modifier = Modifier
                     .padding(3.dp)
                     .width(40.dp)
@@ -89,7 +108,7 @@ fun DrawScreen() {
             }
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Red),
-                onClick = { drawScreenState = drawScreenState.copy(currentColor = Color.Red) },
+                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Red) },
                 modifier = Modifier
                     .padding(3.dp)
                     .width(40.dp)
@@ -98,7 +117,7 @@ fun DrawScreen() {
             }
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Green),
-                onClick = { drawScreenState = drawScreenState.copy(currentColor = Color.Green) },
+                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Green) },
                 modifier = Modifier
                     .padding(3.dp)
                     .width(40.dp)
@@ -107,7 +126,7 @@ fun DrawScreen() {
             }
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Blue),
-                onClick = { drawScreenState = drawScreenState.copy(currentColor = Color.Blue) },
+                onClick = { drawScreenState.value = drawScreenState.value.copy(currentColor = Color.Blue) },
                 modifier = Modifier
                     .padding(3.dp)
                     .width(40.dp)
@@ -117,102 +136,21 @@ fun DrawScreen() {
             Button(
                 colors = ButtonDefaults.buttonColors(Color.Black),
                 onClick = {
-                    drawScreenState = drawScreenState.copy(pathList = emptyList())
+                    pathList.clear()
                 },
                 modifier = Modifier.padding(3.dp)
             ) {
                 Text(text = "Clear")
             }
         }
-
-        Canvas(
+        DrawCanvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .background(
-                    color = colorResource(id = R.color.canvas_color),
-                    shape = RoundedCornerShape(size = 20.dp)
-                )
-                .pointerInput(true) {
-                    detectDragGestures(
-                        onDragStart = {
-                            tempPath = Path()
-                        },
-                        onDragEnd = {
-                            pp.add(PathData(path = tempPath))
-                            drawScreenState = drawScreenState.copy(
-                                pathList = drawScreenState.pathList + PathData(
-                                    path = tempPath,
-                                    color = drawScreenState.currentColor,
-                                    drawScreenState.currentDrawStyle
-                                )
-                            )
-                        }
-                    ) { change, dragAmount ->
-                        // change.consume()
-                        tempPath.moveTo(
-                            change.position.x - dragAmount.x,
-                            change.position.y - dragAmount.y,
-                        )
-                        val line = Line(
-                            start = change.position - dragAmount,
-                            end = change.position,
-                            color = drawScreenState.currentColor
-                        )
-                        Log.d("PROVERKA", "line")
-                        tempPath.lineTo(
-                            x = change.position.x,
-                            y = change.position.y
-                        )
-                        // path = Path().apply { addPath(tempPath) }
-                        /* drawScreenState =
-                            drawScreenState.copy(path = Path().apply { addPath(tempPath) })*/
-                        val currentPathList = if (drawScreenState.pathList.isNotEmpty()) {
-                            drawScreenState.pathList.dropLast(1)
-                        } else {
-                            drawScreenState.pathList
-                        }
-                        if (pp.isNotEmpty()) {
-                            pp.removeAt(pp.size - 1)
-                        }
-                        pp.add(PathData(path = tempPath))
-                        drawScreenState = drawScreenState.copy(
-                            pathList = currentPathList + PathData(
-                                path = tempPath,
-                                color = drawScreenState.currentColor,
-                                drawScreenState.currentDrawStyle
-                            )
-                        )
-                        // drawScreenState = drawScreenState.copy(lines = drawScreenState.lines + line)
-                    }
-                }
-        ) {
-            /*
-            drawScreenState.lines.forEach { line ->
-                drawLine(
-                    color = line.color,
-                    start = line.start,
-                    end = line.end,
-                    strokeWidth = line.strokeWidth,
-                    cap = StrokeCap.Round
-                )
-            }*/
-            pp.forEach { path ->
-                drawPath(
-                    path = path.path,
-                    color = path.color,
-                    style = path.drawStyle,
-                )
-            }
-            /* drawScreenState.pathList.forEach { path ->
-                 drawPath(
-                     path = path.path,
-                     color = path.color,
-                     style = path.drawStyle,
-                 )
-             }*/
-        }
-
+                .weight(1f),
+            pathList = pathList,
+            removedPathList = removedPathList,
+            drawScreenState = drawScreenState,
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -221,6 +159,68 @@ fun DrawScreen() {
             verticalAlignment = Alignment.CenterVertically
         ) {
 
+        }
+    }
+}
+
+@Composable
+private fun DrawCanvas(
+    modifier: Modifier,
+    pathList: SnapshotStateList<PathData>,
+    removedPathList: SnapshotStateList<PathData>,
+    drawScreenState: MutableState<DrawScreenState>,
+) {
+    var tempPath = Path()
+
+    Box(
+        modifier = modifier
+            .background(
+                color = colorResource(id = R.color.canvas_color),
+                shape = RoundedCornerShape(size = 20.dp)
+            )
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = {
+                        tempPath = Path()
+                        pathList.add(
+                            PathData(
+                                path = tempPath,
+                                color = drawScreenState.value.currentColor,
+                                drawStyle = drawScreenState.value.currentDrawStyle,
+                            )
+                        )
+                        removedPathList.clear()
+                    },
+                ) { change, dragAmount ->
+                    tempPath.moveTo(
+                        change.position.x - dragAmount.x,
+                        change.position.y - dragAmount.y,
+                    )
+                    tempPath.lineTo(
+                        x = change.position.x,
+                        y = change.position.y
+                    )
+                    if (pathList.isNotEmpty()) {
+                        pathList.removeAt(pathList.size - 1)
+                    }
+                    pathList.add(
+                        PathData(
+                            path = tempPath,
+                            color = drawScreenState.value.currentColor,
+                            drawStyle = drawScreenState.value.currentDrawStyle,
+                        )
+                    )
+                }
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().clipToBounds()) {
+            pathList.forEach { path ->
+                drawPath(
+                    path = path.path,
+                    color = path.color,
+                    style = path.drawStyle,
+                )
+            }
         }
     }
 }
