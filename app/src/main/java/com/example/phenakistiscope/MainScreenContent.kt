@@ -134,7 +134,7 @@ internal fun MainScreenContent(
                     )
             )
 
-            if (isPalletOpened) {
+            if (mainScreenState.currentScreen == CurrentScreen.Edit && isPalletOpened) {
                 Pallet(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -328,22 +328,24 @@ private fun BottomBar(
 
         Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.main_dimen)))
 
-        // select color
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .border(2.dp, colorResource(id = R.color.selected_color), CircleShape)
-                .padding(1.dp)
-                .clip(CircleShape)
-                .background(
-                    color = if (mainScreenState.currentInstrument == Instrument.Eraser) {
-                        mainScreenState.previousColor
-                    } else {
-                        mainScreenState.currentColor
-                    }
-                )
-                .clickable { onPalletOpened() }
-        )
+        // open select color pallet
+        if (mainScreenState.currentScreen == CurrentScreen.Edit) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .border(2.dp, colorResource(id = R.color.selected_color), CircleShape)
+                    .padding(1.dp)
+                    .clip(CircleShape)
+                    .background(
+                        color = if (mainScreenState.currentInstrument == Instrument.Eraser) {
+                            mainScreenState.previousColor
+                        } else {
+                            mainScreenState.currentColor
+                        }
+                    )
+                    .clickable { onPalletOpened() }
+            )
+        }
     }
 }
 
